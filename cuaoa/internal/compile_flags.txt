@@ -1,0 +1,16 @@
+-std=c++20
+-march=sm_86 
+--cuda-gpu-arch=sm_86 
+-Xcompiler 
+-fPIC
+-Iinclude 
+-O3 
+-Wall 
+-fPIC 
+-fopenmp
+-I/opt/cuda/include 
+-I/home/jflxb/miniforge3/envs/cuaoa/include
+-I./include
+-lcudart 
+-lgomp
+-llbfgs

@@ -1,0 +1,27 @@
+[package]
+name = "pycuaoa"
+version = "0.1.0"
+description = "CUAOA: A Novel CUDA-Accelerated Simulation Framework for the QAOA for Python"
+keywords = ["Quantum Computing", "Quantum Optimization", "QAOA", "Quantum Circuit Simulation"]
+authors = ["Jonas Blenninger <jonas@blenninger.de>"]
+repository = "https://github.com/jflxb/cuaoa"
+license = "Apache-2.0"
+edition = "2021"
+
+[lib]
+name = "pycuaoa"
+crate-type = ["cdylib"]
+
+[dependencies]
+bitvec = "1.0.1"
+numpy = "0.20.0"
+rand = "0.8.5"
+rayon = "1.9.0"
+
+[dependencies.pyo3]
+version = "0.20.3"
+features = [ "num-complex", "extension-module", "auto-initialize",]
+
+[dependencies.cuaoa]
+path = "./cuaoa"
+features = ["py"]

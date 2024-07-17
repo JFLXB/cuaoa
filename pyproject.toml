@@ -1,0 +1,24 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0", "patchelf"]
+build-backend = "maturin"
+
+[project]
+name = "pycuaoa"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+dependencies = [
+  "numpy == 1.26.4"
+]
+dev-dependencies = [
+  "networkx == 3.2.1"
+]
+
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+manylinux = "2_34"
