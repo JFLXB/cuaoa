@@ -1,6 +1,6 @@
 # CUAOA: A Novel CUDA-Accelerated Simulation Framework for the QAOA
 
-[![arXiv](https://img.shields.io/badge/arXiv-unpublished-b31b1b.svg)]()
+[![arXiv](https://img.shields.io/badge/arXiv-2407.13012-b31b1b.svg)](https://arxiv.org/abs/2407.13012)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12750207.svg)](https://doi.org/10.5281/zenodo.12750207)
 
 ## Table of Contents
@@ -214,11 +214,14 @@ By using this software, you agree to comply with the licenses of all dependencie
 If you use this software, please cite it as follows:
 
 ```bibtex
-@misc{stein_CUAOA_2024,
-    author={Jonas Stein and Jonas Blenninger and David Bucher and Peter J. Eder and Elif Çetiner and Maximilian Zorn and Claudia Linnhoff-Popien},
-    title={CUAOA: A Novel CUDA-Accelerated Simulation Framework for the QAOA}, 
-    year={2024},
-    note={unpublished}
+@misc{stein2024cuaoanovelcudaacceleratedsimulation,
+      title={CUAOA: A Novel CUDA-Accelerated Simulation Framework for the QAOA}, 
+      author={Jonas Stein and Jonas Blenninger and David Bucher and Josef Peter Eder and Elif Çetiner and Maximilian Zorn and Claudia Linnhoff-Popien},
+      year={2024},
+      eprint={2407.13012},
+      archivePrefix={arXiv},
+      primaryClass={quant-ph},
+      url={https://arxiv.org/abs/2407.13012}, 
 }
 ```
 
