@@ -11,6 +11,7 @@
    - [Conda Environment Requirement](#conda-environment-requirement)
    - [Installing from Source](#installing-from-source)
    - [Security Note](#security-note)
+   - [Docker Installation](#docker-installation)
    - [Troubleshooting](#troubleshooting)
 3. [Usage](#usage)
 4. [License and Compliance](#license-and-compliance)
