@@ -11,11 +11,11 @@
    - [Conda Environment Requirement](#conda-environment-requirement)
    - [Installing from Source](#installing-from-source)
    - [Security Note](#security-note)
+   - [Docker Installation](#docker-installation)
    - [Troubleshooting](#troubleshooting)
 3. [Usage](#usage)
 4. [License and Compliance](#license-and-compliance)
-5. [Disclaimer](#disclaimer)
-6. [Citation](#citation)
+5. [Citation](#citation)
 
 ## Overview
 
@@ -40,7 +40,8 @@ Before proceeding with the installation, ensure the following tools are installe
 
 ### Conda Environment Requirement
 
-> **IMPORTANT:** The installation script must be run within an active `conda` environment tailored for this project. If such an environment is not yet set up, follow these instructions to create and activate one:
+> [!IMPORTANT] 
+> The installation script must be run within an active `conda` environment tailored for this project. If such an environment is not yet set up, follow these instructions to create and activate one:
 
 ```sh
 # Create a new conda environment
@@ -75,7 +76,8 @@ For a more detailed output during the installation process, include the `--verbo
 
 ### Security Note
 
-> **CAUTION:** Running scripts directly from the internet poses a risk. It is recommended to first download and review the script before execution:
+> [!CAUTION] 
+> Running scripts directly from the internet poses a risk. It is recommended to first download and review the script before execution:
 
 ```sh
 # Review the script's contents
@@ -85,9 +87,51 @@ less install.sh
 bash install.sh
 ```
 
+### Docker Installation
+
+To provide an alternative installation method using Docker, follow the steps below to build and run the CUAOA application within a Docker container.
+
+This section guides you through building the Docker image and running the CUAOA application in a container.
+
+#### Prerequisites
+
+- Ensure that Docker is installed on your system. You can download it from the [official Docker website](https://www.docker.com/get-started).
+- Verify that your system has an NVIDIA GPU and that the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) is installed to enable GPU support within Docker containers.
+
+#### Building the Docker Image
+
+Open a terminal and navigate to the root directory of the CUAOA project. Then, execute the following command to build the Docker image:
+
+```bash
+docker buildx build --tag cuaoa-image --load .
+```
+
+This command uses Docker Buildx to build the image and tags it as `cuaoa-image`.
+
+#### Running the Docker Container
+
+After successfully building the image, run the following command to start a container:
+
+```bash
+docker run --rm -it --gpus all cuaoa-image
+```
+
+This command runs the `cuaoa-image` container interactively with access to all available GPUs.
+
+**Parameters Explained:**
+
+- `--rm`: Automatically removes the container when it exits. This option is optional but helps prevent clutter from stopped containers.
+- `-it`: Allocates a pseudo-TTY and keeps STDIN open, allowing interactive terminal access.
+- `--gpus all`: Grants the container access to all available GPU devices.
+
+For more detailed information on these and other Docker run options, please refer to the [Docker CLI documentation](https://docs.docker.com/engine/reference/commandline/run/).
+
+By following these steps, you can build and run the CUAOA application within a Docker container, leveraging your system's GPU resources. 
+
 ### Troubleshooting
 
-> **TIP:** If you encounter any issues during installation:
+> [!TIP] 
+> If you encounter any issues during installation:
 >
 > - Double-check the [prerequisites](#prerequisites) to ensure all necessary tools are installed.
 > - Verify that the `conda` environment is activated before running the installation script.
