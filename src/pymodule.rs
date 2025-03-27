@@ -24,24 +24,24 @@ use crate::cuaoa::{expectation_value, optimize, CUAOA};
 use crate::handle::{create_handle, PyHandle};
 use crate::utils::{get_cuda_devices_info, PyCudaDevice};
 
-fn register_utils(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    let utils_module = PyModule::new(py, "utils")?;
-    utils_module.add_function(wrap_pyfunction!(get_cuda_devices_info, utils_module)?)?;
+fn register_utils(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    let utils_module = PyModule::new(m.py(), "utils")?;
+    utils_module.add_function(wrap_pyfunction!(get_cuda_devices_info, &utils_module)?)?;
     utils_module.add_class::<PyCudaDevice>()?;
 
     m.add_submodule(&utils_module)?;
     Ok(())
 }
 
-fn register_cuaoa(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    let cuaoa_module = PyModule::new(py, "cuaoa")?;
-    cuaoa_module.add_function(wrap_pyfunction!(expectation_value, cuaoa_module)?)?;
-    cuaoa_module.add_function(wrap_pyfunction!(optimize, cuaoa_module)?)?;
+fn register_cuaoa(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    let cuaoa_module = PyModule::new(m.py(), "cuaoa")?;
+    cuaoa_module.add_function(wrap_pyfunction!(expectation_value, &cuaoa_module)?)?;
+    cuaoa_module.add_function(wrap_pyfunction!(optimize, &cuaoa_module)?)?;
     m.add_submodule(&cuaoa_module)?;
     Ok(())
 }
 
-pub fn register_pycuaoa(py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn register_pycuaoa(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<LBFGSParameters>()?;
     m.add_class::<LBFGSLinesearchAlgorithm>()?;
     m.add_class::<ParameterizationMethod>()?;
@@ -59,7 +59,7 @@ pub fn register_pycuaoa(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyHandle>()?;
     m.add_function(wrap_pyfunction!(create_handle, m)?)?;
 
-    register_cuaoa(py, m)?;
-    register_utils(py, m)?;
+    register_cuaoa(m)?;
+    register_utils(m)?;
     Ok(())
 }

@@ -15,8 +15,8 @@
 from numpy import float64
 from numpy.typing import NDArray
 
-from .pyhandle import PyHandle
-from .core import LBFGSParameters, Polynomial, OptimizeResult, RXMethod
+from . import PyHandle
+from . import LBFGSParameters, Polynomial, OptimizeResult, RXMethod
 
 # expectation value cuaoa
 

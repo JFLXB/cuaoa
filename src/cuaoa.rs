@@ -19,7 +19,7 @@ use cuaoa::{
     core::{LBFGSParameters, RXMethod},
     prelude::{make_randnums, AOASetters, ParameterizationMethod, CUAOA as CUAOAInner},
 };
-use numpy::{Complex64, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
+use numpy::{Complex64, PyArray1, PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::{
     exceptions::{PyRuntimeError, PyValueError},
     prelude::*,
@@ -52,7 +52,6 @@ impl CUAOA {
         rxmethod=None,
     ), text_signature="(adjacency_matrix, /, depth, parameterization_method=None, parameters=None, *, time=None, seed=None, block_size=None, rxmethod=None)")]
     fn new(
-        py: Python,
         adjacency_matrix: PyReadonlyArray2<f64>,
         depth: Option<usize>,
         parameterization_method: Option<ParameterizationMethod>,
@@ -62,8 +61,7 @@ impl CUAOA {
         block_size: Option<usize>,
         rxmethod: Option<RXMethod>,
     ) -> PyResult<Self> {
-        let param =
-            build_parameterization(py, depth, parameterization_method, parameters, time, seed)?;
+        let param = build_parameterization(depth, parameterization_method, parameters, time, seed)?;
         let adj = make_adjacency_matrix(adjacency_matrix);
         let inner = CUAOAInner::new(&adj, param, block_size, rxmethod);
         Ok(CUAOA { inner })
@@ -82,7 +80,6 @@ impl CUAOA {
         rxmethod=None,
     ), text_signature="(num_qubits, dictionary, /, depth, parameterization_method=None, parameters=None, *, time=None, seed=None, block_size=None, rxmethod=None)")]
     fn new_from_map(
-        py: Python,
         num_qubits: usize,
         dictionary: HashMap<Vec<usize>, f64>,
         depth: Option<usize>,
@@ -93,8 +90,7 @@ impl CUAOA {
         block_size: Option<usize>,
         rxmethod: Option<RXMethod>,
     ) -> PyResult<Self> {
-        let param =
-            build_parameterization(py, depth, parameterization_method, parameters, time, seed)?;
+        let param = build_parameterization(depth, parameterization_method, parameters, time, seed)?;
         let inner = CUAOAInner::new_from_map(num_qubits, &dictionary, param, block_size, rxmethod);
         Ok(CUAOA { inner })
     }
@@ -102,7 +98,6 @@ impl CUAOA {
     #[pyo3(name = "optimize", signature = (handle, lbfgs_parameters=None), text_signature = "(self, handle, /, lbfgs_parameters=None)")]
     pub fn optimize(
         &mut self,
-        py: Python,
         handle: &PyHandle,
         lbfgs_parameters: Option<&LBFGSParameters>,
     ) -> PyResult<OptimizeResult> {
@@ -111,26 +106,14 @@ impl CUAOA {
             Ok(res) => {
                 let it = res.iteration;
                 let n_evals = res.n_evals;
-                let fx_hist: Option<Py<PyArray1<f64>>> = match res.fx_log {
-                    Some(fxl) => Some(fxl.to_pyarray(py).into()),
-                    None => None,
-                };
-                let betas_hist: Option<Py<PyArray2<f64>>> = match res.beta_log {
-                    Some(bl) => Some(PyArray2::from_vec2(py, &bl).unwrap().into()),
-                    None => None,
-                };
-                let gammas_hist: Option<Py<PyArray2<f64>>> = match res.gamma_log {
-                    Some(gl) => Some(PyArray2::from_vec2(py, &gl).unwrap().into()),
-                    None => None,
-                };
-                let params = Parameters::from_raw(py, res.betas, res.gammas);
+                let params = Parameters::from_raw(res.betas, res.gammas);
                 Ok(OptimizeResult::new(
                     it,
                     n_evals,
                     params,
-                    fx_hist,
-                    betas_hist,
-                    gammas_hist,
+                    res.fx_log,
+                    res.beta_log,
+                    res.gamma_log,
                 ))
             }
             Err(err) => Err(PyRuntimeError::new_err(err)),
@@ -178,10 +161,10 @@ impl CUAOA {
     }
 
     #[pyo3(name = "get_parameters", text_signature = "(self)")]
-    pub fn get_parameters(&self, py: Python) -> Parameters {
+    pub fn get_parameters(&self) -> Parameters {
         Parameters {
-            betas: self.get_betas(py),
-            gammas: self.get_gammas(py),
+            betas: self.inner.betas().to_vec(),
+            gammas: self.inner.gammas().to_vec(),
         }
     }
 
@@ -211,14 +194,13 @@ impl CUAOA {
     }
 
     #[pyo3(name = "get_polynomial", text_signature = "(self)")]
-    pub fn get_polynomial(&self, py: Python) -> PyPolynomial {
-        PyPolynomial::from_cuaoa(py, self.inner.polynomial())
+    pub fn get_polynomial(&self) -> PyPolynomial {
+        PyPolynomial::from_cuaoa(self.inner.polynomial())
     }
 
     #[pyo3(name = "gradients", signature = (handle, betas = None, gammas = None), text_signature = "(self, handle, /, *, betas, gammas)")]
     pub fn grads(
         &self,
-        py: Python,
         handle: &PyHandle,
         betas: Option<PyReadonlyArray1<f64>>,
         gammas: Option<PyReadonlyArray1<f64>>,
@@ -231,7 +213,7 @@ impl CUAOA {
         match result {
             Ok(gradients) => {
                 let expval = gradients.expectation_value;
-                Ok((Parameters::from_gradients(py, gradients), expval))
+                Ok((Parameters::from_gradients(gradients), expval))
             }
             Err(err) => Err(PyRuntimeError::new_err(err)),
         }
@@ -259,7 +241,6 @@ impl CUAOA {
 #[pyfunction]
 #[pyo3(name = "expectation_value", signature = (handle, num_qubits, depth, polynomial, betas, gammas, block_size=None, rxmethod=None), text_signature = "(handle, /, num_qubits, depth, polynomial, betas, gammas, block_size=None, rxmethod=None)")]
 pub fn expectation_value(
-    py: Python,
     handle: &PyHandle,
     num_qubits: usize,
     depth: usize,
@@ -273,7 +254,7 @@ pub fn expectation_value(
         handle.get(),
         num_qubits,
         depth,
-        &polynomial.into(py),
+        &polynomial.into(),
         betas.as_slice().unwrap(),
         gammas.as_slice().unwrap(),
         block_size,
@@ -285,7 +266,6 @@ pub fn expectation_value(
 #[pyfunction]
 #[pyo3(name = "optimize", signature = (handle, num_qubits, depth, polynomial, betas, gammas, lbfgs_parameters=None, block_size=None, rxmethod=None), text_signature = "(handle, /, num_qubits, depth, polynomial, betas, gammas, lbfgs_parameters=None, block_size=None, rxmethod=None)")]
 pub fn optimize(
-    py: Python,
     handle: &PyHandle,
     num_qubits: usize,
     depth: usize,
@@ -300,7 +280,7 @@ pub fn optimize(
         handle.get(),
         num_qubits,
         depth,
-        &polynomial.into(py),
+        &polynomial.into(),
         betas.as_slice().unwrap(),
         gammas.as_slice().unwrap(),
         lbfgs_parameters,
@@ -310,18 +290,13 @@ pub fn optimize(
     .unwrap();
     let it = optresult.iteration;
     let n_evals = optresult.n_evals;
-    let fx_hist: Option<Py<PyArray1<f64>>> = match optresult.fx_log {
-        Some(fxl) => Some(fxl.to_pyarray(py).into()),
-        None => None,
-    };
-    let betas_hist: Option<Py<PyArray2<f64>>> = match optresult.beta_log {
-        Some(bl) => Some(PyArray2::from_vec2(py, &bl).unwrap().into()),
-        None => None,
-    };
-    let gammas_hist: Option<Py<PyArray2<f64>>> = match optresult.gamma_log {
-        Some(gl) => Some(PyArray2::from_vec2(py, &gl).unwrap().into()),
-        None => None,
-    };
-    let params = Parameters::from_raw(py, optresult.betas, optresult.gammas);
-    OptimizeResult::new(it, n_evals, params, fx_hist, betas_hist, gammas_hist)
+    let params = Parameters::from_raw(optresult.betas, optresult.gammas);
+    OptimizeResult::new(
+        it,
+        n_evals,
+        params,
+        optresult.fx_log,
+        optresult.beta_log,
+        optresult.gamma_log,
+    )
 }

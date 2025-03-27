@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[cfg(feature = "py")]
-extern crate pyo3;
+// #[cfg(feature = "py")]
+// extern crate pyo3;
 use std::usize;
 
 use bitvec::vec::BitVec;
@@ -234,15 +234,15 @@ impl LBFGSParameters {
     }
 }
 
-#[cfg_attr(feature = "py", pyclass(mapping, module = "pycuaoa"))]
-#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "py", pyclass(eq, eq_int, mapping, module = "pycuaoa"))]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RXMethod {
     Custatevec,
     QOKit,
 }
 
-#[cfg_attr(feature = "py", pyclass(mapping, module = "pycuaoa"))]
-#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "py", pyclass(eq, eq_int, mapping, module = "pycuaoa"))]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LBFGSLinesearchAlgorithm {
     Default,                 // = 0,
     MoreThente,              // = 0,

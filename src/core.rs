@@ -23,6 +23,8 @@ use cuaoa::prelude::ParameterizationMethod;
 use cuaoa::prelude::Polynomial as CuaoaPolynomial;
 use numpy::IntoPyArray;
 use numpy::PyArray2;
+use numpy::PyArrayMethods;
+use numpy::PyReadonlyArray1;
 use numpy::{PyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::exceptions::PyValueError;
@@ -30,24 +32,22 @@ use pyo3::prelude::*;
 
 #[pyclass(mapping, module = "pycuaoa", subclass)]
 pub struct Polynomial {
-    #[pyo3(get)]
-    pub keys: Py<PyArray1<usize>>,
-    #[pyo3(get)]
-    pub values: Py<PyArray1<f64>>,
+    pub keys: Vec<usize>,
+    pub values: Vec<f64>,
 }
 
 impl Polynomial {
-    pub fn from_cuaoa(py: Python, polynomial: &CuaoaPolynomial) -> Polynomial {
+    pub fn from_cuaoa(polynomial: &CuaoaPolynomial) -> Polynomial {
         Polynomial {
-            keys: polynomial.keys.to_pyarray(py).into(),
-            values: polynomial.values.to_pyarray(py).into(),
+            keys: polynomial.keys.clone(),
+            values: polynomial.values.clone(),
         }
     }
 
-    pub fn into(&self, py: Python) -> CuaoaPolynomial {
+    pub fn into(&self) -> CuaoaPolynomial {
         CuaoaPolynomial {
-            keys: self.keys.as_ref(py).to_vec().unwrap(),
-            values: self.values.as_ref(py).to_vec().unwrap(),
+            keys: self.keys.clone(),
+            values: self.values.clone(),
         }
     }
 }
@@ -56,32 +56,35 @@ impl Polynomial {
 #[derive(Clone)]
 pub struct Parameters {
     #[pyo3(get)]
-    pub betas: Py<PyArray1<f64>>,
+    pub betas: Vec<f64>,
     #[pyo3(get)]
-    pub gammas: Py<PyArray1<f64>>,
+    pub gammas: Vec<f64>,
 }
 
 #[pymethods]
 impl Parameters {
     #[new]
     #[pyo3(signature = (betas, gammas), text_signature="(betas, gammas)")]
-    fn new(betas: Py<PyArray1<f64>>, gammas: Py<PyArray1<f64>>) -> Self {
-        Parameters { betas, gammas }
+    fn new(betas: PyReadonlyArray1<f64>, gammas: PyReadonlyArray1<f64>) -> PyResult<Self> {
+        Ok(Parameters {
+            betas: betas.to_vec()?,
+            gammas: gammas.to_vec()?,
+        })
     }
 }
 
 impl Parameters {
-    pub fn from_gradients(py: Python, gradients: Gradients) -> Parameters {
+    pub fn from_gradients(gradients: Gradients) -> Parameters {
         Parameters {
-            betas: gradients.beta.to_pyarray(py).into(),
-            gammas: gradients.gamma.to_pyarray(py).into(),
+            betas: gradients.beta,
+            gammas: gradients.gamma,
         }
     }
 
-    pub fn from_raw(py: Python, betas: Vec<f64>, gammas: Vec<f64>) -> Self {
+    pub fn from_raw(betas: Vec<f64>, gammas: Vec<f64>) -> Self {
         Self {
-            betas: betas.to_pyarray(py).into(),
-            gammas: gammas.to_pyarray(py).into(),
+            betas,  // betas.to_pyarray(py).into(),
+            gammas, // : gammas.to_pyarray(py).into(),
         }
     }
 }
@@ -95,12 +98,12 @@ pub struct OptimizeResult {
     pub n_evals: i64,
     #[pyo3(get)]
     pub parameters: Parameters,
-    #[pyo3(get)]
-    pub fx_hist: Option<Py<PyArray1<f64>>>,
-    #[pyo3(get)]
-    pub betas_hist: Option<Py<PyArray2<f64>>>,
-    #[pyo3(get)]
-    pub gammas_hist: Option<Py<PyArray2<f64>>>,
+    // #[pyo3(get)]
+    pub fx_hist: Option<Vec<f64>>,
+    // #[pyo3(get)]
+    pub betas_hist: Option<Vec<Vec<f64>>>,
+    // #[pyo3(get)]
+    pub gammas_hist: Option<Vec<Vec<f64>>>,
 }
 
 impl OptimizeResult {
@@ -108,9 +111,9 @@ impl OptimizeResult {
         iter: i64,
         n_evals: i64,
         parameters: Parameters,
-        fx_hist: Option<Py<PyArray1<f64>>>,
-        betas_hist: Option<Py<PyArray2<f64>>>,
-        gammas_hist: Option<Py<PyArray2<f64>>>,
+        fx_hist: Option<Vec<f64>>,
+        betas_hist: Option<Vec<Vec<f64>>>,
+        gammas_hist: Option<Vec<Vec<f64>>>,
     ) -> Self {
         Self {
             iteration: iter,
@@ -135,7 +138,7 @@ pub struct SampleSet {
 #[pymethods]
 impl SampleSet {
     #[pyo3(name = "samples", text_signature = "(self)")]
-    pub fn samples(&self, py: Python) -> Py<PyArray2<bool>> {
+    pub fn samples<'a>(&self, py: Python<'a>) -> Bound<'a, PyArray2<bool>> {
         self.sample_vecs
             .iter()
             .map(|sample| sample.iter().map(|bit| *bit).collect())
@@ -187,7 +190,6 @@ pub fn make_adjacency_matrix(adjacency_matrix: PyReadonlyArray2<f64>) -> Vec<Vec
 }
 
 pub fn build_parameterization(
-    py: Python,
     depth: Option<usize>,
     parameterization_method: Option<ParameterizationMethod>,
     parameters: Option<Parameters>,
@@ -199,8 +201,8 @@ pub fn build_parameterization(
         (Some(d), None, None, None) => Ok(Parameterization::default(d, time)),
         (Some(d), None, None, _) => Ok(Parameterization::new_random(d, seed)),
         (_, None, Some(p), _) => {
-            let ba = p.betas.as_ref(py).readonly().to_vec()?;
-            let ga = p.gammas.as_ref(py).readonly().to_vec()?;
+            let ba = p.betas; // .as_ref(py).readonly().to_vec()?;
+            let ga = p.gammas; //.as_ref(py).readonly().to_vec()?;
 
             match depth {
                 Some(d) => {
@@ -236,15 +238,14 @@ pub fn build_parameterization(
 
 #[pyfunction]
 #[pyo3(name = "make_polynomial")]
-pub fn make_polynomial(py: Python, adjacency_matrix: PyReadonlyArray2<f64>) -> Polynomial {
-    Polynomial::from_cuaoa(
-        py,
-        &cuaoa::make_polynomial(&make_adjacency_matrix(adjacency_matrix)),
-    )
+pub fn make_polynomial(adjacency_matrix: PyReadonlyArray2<f64>) -> Polynomial {
+    Polynomial::from_cuaoa(&cuaoa::make_polynomial(&make_adjacency_matrix(
+        adjacency_matrix,
+    )))
 }
 
 #[pyfunction]
 #[pyo3(name = "make_polynomial_from_dict")]
-pub fn make_polynomial_from_map(py: Python, dictionary: HashMap<Vec<usize>, f64>) -> Polynomial {
-    Polynomial::from_cuaoa(py, &cuaoa::make_polynomial_from_map(&dictionary))
+pub fn make_polynomial_from_map(dictionary: HashMap<Vec<usize>, f64>) -> Polynomial {
+    Polynomial::from_cuaoa(&cuaoa::make_polynomial_from_map(&dictionary))
 }

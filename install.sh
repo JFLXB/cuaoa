@@ -35,10 +35,11 @@ execute_command() {
 
 echo -e "${LINK}${NC} Installing the ${GREEN}custatevec${NC} and ${GREEN}lbfgs${NC} libraries${NC}"
 conda install custatevec conda-forge::liblbfgs
-execute_command "pip install maturin[patchelf]" "Installing the ${GREEN}maturin${NC} build tool with ${GREEN}patchelf${NC}" "$PUZZLE"
-execute_command "maturin build --release" "Building the project from source... (this might take a while)" "$GEAR "
+# execute_command "pip install maturin[patchelf]" "Installing the ${GREEN}maturin${NC} build tool with ${GREEN}patchelf${NC}" "$PUZZLE"
+# execute_command "maturin build --release" "Building the project from source... (this might take a while)" "$GEAR "
+execute_command "uv build" "Building the project from source... (this might take a while)" "$GEAR "
 
-WHEEL_FILE=$(find target/wheels -name '*.whl' | sort | tail -n 1)
+WHEEL_FILE=$(find dist -name '*.whl' | sort | tail -n 1)
 
 if [[ ! -z "$WHEEL_FILE" ]]; then
     execute_command "pip install $WHEEL_FILE" "Installing the wheel file with pip..." "$PACKAGE"

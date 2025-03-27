@@ -23,8 +23,8 @@ extern crate pyo3;
 #[cfg(feature = "py")]
 use pyo3::prelude::*;
 
-#[cfg_attr(feature = "py", pyclass)]
-#[derive(Clone)]
+#[cfg_attr(feature = "py", pyclass(eq, eq_int))]
+#[derive(Clone, PartialEq)]
 pub enum ParameterizationMethod {
     StandardLinearRamp,
     Random,

@@ -14,4 +14,4 @@
 
 # pyright: reportMissingModuleSource=false
 
-from .pycuaoa import *  # noqa: F403
+from ._core import *  # noqa: F403

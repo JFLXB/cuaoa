@@ -24,9 +24,9 @@ pub use core::Parameters;
 use pyo3::prelude::*;
 
 #[pymodule]
-#[pyo3(name = "pycuaoa")]
-fn pycuaoa(py: Python, m: &PyModule) -> PyResult<()> {
+#[pyo3(name = "_core")]
+fn pycuaoa(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    pymodule::register_pycuaoa(py, m)?;
+    pymodule::register_pycuaoa(m)?;
     Ok(())
 }

@@ -70,8 +70,8 @@ impl BruteFroce {
     }
 
     #[pyo3(name = "get_polynomial", text_signature = "(self)")]
-    pub fn get_polynomial(&self, py: Python) -> PyPolynomial {
-        PyPolynomial::from_cuaoa(py, self.inner.polynomial())
+    pub fn get_polynomial(&self) -> PyPolynomial {
+        PyPolynomial::from_cuaoa(self.inner.polynomial())
     }
 
     #[pyo3(name = "get_num_nodes", text_signature = "(self)")]
