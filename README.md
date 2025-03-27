@@ -36,6 +36,7 @@ Before proceeding with the installation, ensure the following tools are installe
 - [git](https://git-scm.com/): Required for cloning the repository.
 - [pip](https://pip.pypa.io/en/stable/installing/): Necessary for Python package installations.
 - [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html): A crucial tool for environment and package management.
+- [uv](https://docs.astral.sh/uv/): Another crucial tool for environment and package management.
 - [Python >= 3.11](https://www.python.org/downloads/): Required for running the Python code. Other versions may work but have not been tested.
 
 ### Conda Environment Requirement
